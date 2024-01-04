@@ -14,7 +14,7 @@ VOICES = ["alloy", "echo", "fable", "onyx", "nova", "shimmer"]
 
 # Streamlitのselectboxを使用してユーザーが選択できるようにする
 selected_model_name = st.selectbox("モデルを選択してください", MODEL_NAMES)
-selected_voice = st.selectbox("音声を選択してください", VOICES)
+selected_voice = st.selectbox("お話ししたい人を選択してください", VOICES)
 
 
 client = OpenAI(api_key=os.getenv("OPENAI_APIKEY"))
@@ -72,7 +72,7 @@ def write_audio_file(file_path, audio_bytes):
 if "user_input" not in st.session_state:
     st.session_state.user_input = ""
 
-user_input = st.text_input("system promptを設定してください", value=st.session_state.user_input)
+user_input = st.text_input("お話ししたい人の特徴を設定してください", value=st.session_state.user_input)
 
 
 if user_input:
@@ -88,17 +88,17 @@ if user_input:
             file=open("recorded_audio.wav", "rb"),
         )
         transcript_text = transcript.text
-        st.text_area("音声の書き起こしテキスト:", transcript_text, height=100)
+        st.text_area("あなたの話した内容:", transcript_text, height=100)
 
         # チャットボットからのレスポンスの取得
         response_chatgpt = chatbot.get_ai_response(transcript_text)
 
         response = client.audio.speech.create(
-            model="tts-1", voice=selected_voice, input=response_chatgpt
+            model="tts-1-hd", voice=selected_voice, input=response_chatgpt
         )
 
         response.stream_to_file("speech.mp3")
         st.audio(read_audio_file("speech.mp3"), format="audio/mp3")
         
         # レスポンステキストの表示
-        st.text_area("チャットボットの回答:", response_chatgpt, height=200)
+        st.text_area("相手からの返信:", response_chatgpt, height=200)
