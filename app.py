@@ -83,7 +83,7 @@ if new_user_input != st.session_state.user_input:
 if st.session_state.user_input:
     chatbot = initialize_chatbot(client, st.session_state.user_input)
     # 以下の処理は同じ
-    audio_bytes = audio_recorder()
+    audio_bytes = audio_recorder('Click to record and \n Click to stop recording',"")
     if audio_bytes:
         st.audio(audio_bytes, format="audio/wav")
         write_audio_file("recorded_audio.wav", audio_bytes)
