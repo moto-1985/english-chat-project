@@ -1,5 +1,3 @@
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
 from openai import OpenAI
 import streamlit as st
 from dotenv import load_dotenv
