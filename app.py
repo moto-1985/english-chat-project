@@ -1,3 +1,5 @@
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 from openai import OpenAI
 import streamlit as st
 from dotenv import load_dotenv
@@ -10,6 +12,7 @@ from audio_recorder_streamlit import audio_recorder
 
 # 利用可能なモデルと音声のリスト
 MODEL_NAMES = ["gpt-3.5-turbo-1106", "gpt-4-1106-preview"]
+# MODEL_NAMES = ["gpt-4-1106-preview"]
 VOICES = ["alloy", "echo", "fable", "onyx", "nova", "shimmer"]
 
 # Streamlitのselectboxを使用してユーザーが選択できるようにする
@@ -41,6 +44,7 @@ class ChatBot:
             model=self.model_name,
             messages=input_message_history,
             temperature=0,
+            max_tokens=300
         )
         ai_response = response.choices[0].message.content
         self.input_message_list.append({"role": "assistant", "content": ai_response})
@@ -72,11 +76,15 @@ def write_audio_file(file_path, audio_bytes):
 if "user_input" not in st.session_state:
     st.session_state.user_input = ""
 
-user_input = st.text_input("お話ししたい人の特徴を設定してください", value=st.session_state.user_input)
+# ユニークなキーを指定
+new_user_input = st.text_input("お話ししたい人の特徴を設定してください", value=st.session_state.user_input, key="user_input_key")
+if new_user_input != st.session_state.user_input:
+    st.session_state.user_input = new_user_input
 
-
-if user_input:
-    chatbot = initialize_chatbot(client, user_input)
+# その後の処理
+if st.session_state.user_input:
+    chatbot = initialize_chatbot(client, st.session_state.user_input)
+    # 以下の処理は同じ
     audio_bytes = audio_recorder()
     if audio_bytes:
         st.audio(audio_bytes, format="audio/wav")
@@ -88,17 +96,16 @@ if user_input:
             file=open("recorded_audio.wav", "rb"),
         )
         transcript_text = transcript.text
-        st.text_area("あなたの話した内容:", transcript_text, height=100)
-
+        st.text_area("あなたの話した内容:", transcript.text, height=100)
         # チャットボットからのレスポンスの取得
         response_chatgpt = chatbot.get_ai_response(transcript_text)
 
         response = client.audio.speech.create(
-            model="tts-1-hd", voice=selected_voice, input=response_chatgpt
+            model="tts-1", voice=selected_voice, input=response_chatgpt
         )
 
         response.stream_to_file("speech.mp3")
         st.audio(read_audio_file("speech.mp3"), format="audio/mp3")
         
         # レスポンステキストの表示
-        st.text_area("相手からの返信:", response_chatgpt, height=200)
+        st.text_area("相手からの返信:", response_chatgpt, height=400)
